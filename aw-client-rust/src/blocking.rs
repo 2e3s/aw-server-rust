@@ -1,12 +1,13 @@
 use std::future::Future;
 use std::vec::Vec;
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error};
 
 use chrono::{DateTime, Utc};
 
 use aw_models::{Bucket, Event};
 
 use super::AwClient as AsyncAwClient;
+use super::RequestError;
 
 pub struct AwClient {
     client: AsyncAwClient,
@@ -32,13 +33,13 @@ fn block_on<F: Future>(f: F) -> F::Output {
 macro_rules! proxy_method
 {
     ($name:tt, $ret:ty, $($v:ident: $t:ty),*) => {
-        pub fn $name(&self, $($v: $t),*) -> Result<$ret, reqwest::Error>
+        pub fn $name(&self, $($v: $t),*) -> Result<$ret, RequestError>
         { block_on(self.client.$name($($v),*)) }
     };
 }
 
 impl AwClient {
-    pub fn new(host: &str, port: u16, name: &str) -> Result<AwClient, Box<dyn Error>> {
+    pub fn new(host: &str, port: u16, name: &str) -> Result<AwClient, Box<dyn error::Error>> {
         let async_client = AsyncAwClient::new(host, port, name)?;
 
         Ok(AwClient {
